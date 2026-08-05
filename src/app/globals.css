@@ -1,26 +1,142 @@
-@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --font-sans: 'Inter', sans-serif;
+  
+  /* Light Theme (Zinc-based) */
+  --bg-color: #FFFFFF; 
+  --bg-surface: #FFFFFF;
+  --bg-surface-hover: #F4F4F5;
+  --bg-surface-active: #E4E4E7;
+  
+  --text-main: #27272A; 
+  --text-muted: #718096;
+  --text-inverse: #FFFFFF;
+  
+  --border-subtle: #F4F4F5;
+  --border-main: #E4E4E7;
+  
+  --bubble-ai: #F4F4F5;
+  --bubble-user: #F4F4F5;
+  
+  --accent-main: #81988A;
+  
+  /* Sidebar */
+  --sidebar-bg: #FFFFFF;
+  --nav-hover-bg: #F4F4F5;
+  --nav-hover-text: #27272A;
+  
+  /* User Menu */
+  --menu-bg: #18181B; /* Zinc 900 */
+  --menu-text: #FAFAFA;
+  --menu-hover: rgba(255,255,255,0.1);
+  --menu-divider: #27272A;
+  
+  /* Miscellaneous */
+  --disclaimer-bg: #F4F4F5;
+  --crisis-bg: #FEF2F2;
+  --crisis-border: #FCA5A5;
+  --crisis-text: #991B1B;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+[data-theme="dark"] {
+  /* Dark Theme (Zinc-based) */
+  --bg-color: #09090B; /* Zinc 950 */
+  --bg-surface: #18181B; /* Zinc 900 */
+  --bg-surface-hover: #27272A; /* Zinc 800 */
+  --bg-surface-active: #3F3F46;
+  
+  --text-main: #FAFAFA; /* Zinc 50 */
+  --text-muted: #A1A1AA; /* Zinc 400 */
+  --text-inverse: #18181B;
+  
+  --border-subtle: #18181B;
+  --border-main: #27272A;
+  
+  --bubble-ai: #18181B;
+  --bubble-user: #27272A;
+  
+  --accent-main: #6B8374;
+  
+  /* Sidebar */
+  --sidebar-bg: #09090B;
+  --nav-hover-bg: #18181B;
+  --nav-hover-text: #FAFAFA;
+  
+  /* User Menu */
+  --menu-bg: #18181B;
+  --menu-text: #FAFAFA;
+  --menu-hover: rgba(255,255,255,0.05);
+  --menu-divider: #27272A;
+  
+  /* Miscellaneous */
+  --disclaimer-bg: #18181B;
+  --crisis-bg: #450A0A; /* Red 950 */
+  --crisis-border: #7F1D1D; /* Red 900 */
+  --crisis-text: #FECACA; /* Red 200 */
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
 }
+
+/* Very subtle, calming entrance for messages */
+@keyframes softFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.message-enter {
+  animation: softFadeIn 0.5s ease-out forwards;
+}
+
+/* Custom scrollbar - unobtrusive */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+/* Typing Indicator Animation */
+@keyframes typingBounce {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-4px); }
+}
+
+.typing-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background-color: var(--text-muted);
+  border-radius: 50%;
+  animation: typingBounce 1.4s infinite ease-in-out both;
+  opacity: 0.7;
+}
+
+.typing-dot:nth-child(1) { animation-delay: -0.32s; }
+.typing-dot:nth-child(2) { animation-delay: -0.16s; }
+.typing-dot:nth-child(3) { animation-delay: 0s; }
