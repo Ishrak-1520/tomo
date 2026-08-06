@@ -17,7 +17,7 @@ Tomo is a quiet space for personal reflection. It is a web application built to 
 * Frontend: Next.js and React
 * Backend: Next.js API Routes
 * Database and Auth: Supabase
-* Intelligence: Google Gemini API
+* Intelligence: OpenRouter API
 
 ## Setup
 
@@ -33,4 +33,4 @@ You need the following keys in your `.env.local` file:
 
 * `NEXT_PUBLIC_SUPABASE_URL`: Your Supabase project URL.
 * `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Your Supabase public anon key.
-* `GEMINI_API_KEY`: Your Google Gemini API key.
+* `OPENROUTER_API_KEY`: Your OpenRouter API key.
