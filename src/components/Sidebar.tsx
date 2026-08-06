@@ -4,12 +4,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { MessageCircle, Clock, BarChart2, User, Settings, Moon, Sun, LogOut, Menu } from 'lucide-react';
+import { MessageCircle, Clock, BarChart2, User, Settings, Moon, Sun, LogOut, Menu, HelpCircle } from 'lucide-react';
+import QuickGuideModal from './QuickGuideModal';
 
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showQuickGuide, setShowQuickGuide] = useState(false);
   const [theme, setTheme] = useState('light');
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -120,6 +122,15 @@ export default function Sidebar() {
           <a href="/insights" title="Insights" style={navItemStyle} onMouseOver={(e) => { e.currentTarget.style.color = 'var(--nav-hover-text)'; e.currentTarget.style.backgroundColor = 'var(--nav-hover-bg)' }} onMouseOut={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.backgroundColor = 'transparent' }}>
             <BarChart2 size={22} strokeWidth={2} />
           </a>
+          <button 
+            onClick={() => setShowQuickGuide(true)} 
+            title="How to use Tomo" 
+            style={{...navItemStyle, background: 'none', border: 'none', width: '100%', marginBottom: '1rem'}} 
+            onMouseOver={(e) => { e.currentTarget.style.color = 'var(--nav-hover-text)'; e.currentTarget.style.backgroundColor = 'var(--nav-hover-bg)' }} 
+            onMouseOut={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.backgroundColor = 'transparent' }}
+          >
+            <HelpCircle size={22} strokeWidth={2} />
+          </button>
         </nav>
 
         {/* User Menu at Bottom */}
@@ -162,6 +173,8 @@ export default function Sidebar() {
           )}
         </div>
       </div>
+      
+      <QuickGuideModal isOpen={showQuickGuide} onClose={() => setShowQuickGuide(false)} />
     </>
   );
 }
