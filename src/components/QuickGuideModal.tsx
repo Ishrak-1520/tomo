@@ -21,7 +21,7 @@ export default function QuickGuideModal({ isOpen, onClose }: { isOpen: boolean, 
       padding: '1rem',
     },
     modal: {
-      backgroundColor: 'var(--bg-main)',
+      backgroundColor: 'var(--bg-color)',
       borderRadius: '24px',
       width: '100%',
       maxWidth: '500px',
@@ -38,7 +38,7 @@ export default function QuickGuideModal({ isOpen, onClose }: { isOpen: boolean, 
       borderBottom: '1px solid var(--border-main)',
       position: 'sticky' as const,
       top: 0,
-      backgroundColor: 'var(--bg-main)',
+      backgroundColor: 'var(--bg-color)',
       zIndex: 10,
     },
     title: {
@@ -49,7 +49,7 @@ export default function QuickGuideModal({ isOpen, onClose }: { isOpen: boolean, 
       letterSpacing: '-0.02em',
     },
     closeBtn: {
-      background: 'var(--bg-secondary)',
+      background: 'var(--bg-surface-hover)',
       border: 'none',
       color: 'var(--text-muted)',
       cursor: 'pointer',
@@ -119,7 +119,7 @@ export default function QuickGuideModal({ isOpen, onClose }: { isOpen: boolean, 
               onClick={onClose} 
               style={styles.closeBtn}
               onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--border-main)'}
-              onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-secondary)'}
+              onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-surface-hover)'}
             >
               <X size={20} />
             </button>
