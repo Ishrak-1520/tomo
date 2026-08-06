@@ -8,8 +8,8 @@ export const env = {
   llmProvider: (process.env.LLM_PROVIDER || 'ollama') as 'openrouter' | 'ollama',
   
   openRouterApiKey: process.env.OPENROUTER_API_KEY || '',
-  // Fallback models for OpenRouter (e.g. gemma-7b or whatever is free and available)
-  openRouterModelFallbacks: ['google/gemma-2-9b-it:free', 'qwen/qwen-2-72b-instruct:free'],
+  // Fallback models for OpenRouter
+  openRouterModelFallbacks: ['google/gemma-4-31b-it:free', 'google/gemma-4-26b-a4b-it:free'],
   
   ollamaBaseUrl: process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434/v1',
   localModelId: process.env.LOCAL_MODEL_ID || 'qwen3:8b',

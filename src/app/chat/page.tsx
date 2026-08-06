@@ -12,7 +12,7 @@ type Message = {
   showCrisisCard?: boolean;
 };
 
-import { X, ArrowUp } from 'lucide-react';
+import { X, ArrowUp, SlidersHorizontal, Check, Sparkles, LifeBuoy } from 'lucide-react';
 
 const TomoAvatar = () => (
   <div style={{
@@ -41,6 +41,10 @@ export default function ChatPage() {
   const [showDisclaimer, setShowDisclaimer] = useState(true);
   const [isGenZMode, setIsGenZMode] = useState(false);
   const [showEndSessionModal, setShowEndSessionModal] = useState(false);
+  const [showPreferencesModal, setShowPreferencesModal] = useState(false);
+  const [sessionMode, setSessionMode] = useState<'classic' | 'guided'>('classic');
+  const [chatLanguage, setChatLanguage] = useState<string>('english');
+  const [inSession, setInSession] = useState(false);
   
   const [deviceId, setDeviceId] = useState<string>('');
   const [sessionId, setSessionId] = useState<string>('');
@@ -62,6 +66,9 @@ export default function ChatPage() {
         return;
       }
       setDeviceId(session.user.id);
+      if (session.user.user_metadata?.mainLanguage) {
+        setChatLanguage(session.user.user_metadata.mainLanguage);
+      }
     };
     initAuth();
 
@@ -88,49 +95,46 @@ export default function ChatPage() {
         if (ignore) return;
 
         if (data.messages && data.messages.length > 0) {
+          setInSession(true);
           setMessages(data.messages.map((m: any) => ({
             id: m.id,
             role: m.role,
             content: m.content
           })));
         } else {
-          // Fetch dynamic welcome message
-          try {
-            const memoryEnabled = localStorage.getItem('tomo_long_term_memory') !== 'false';
-            const welcomeRes = await fetch(`/api/chat/welcome?sessionId=${currentSessionId}&memoryEnabled=${memoryEnabled}`);
-            const welcomeData = await welcomeRes.json();
-            if (!ignore) {
-              setMessages([{
-                id: 'welcome',
-                role: 'assistant',
-                content: welcomeData.content || 'hi there. i am tomo. i am here to listen and support you. how are you feeling today?',
-              }]);
-            }
-          } catch (e) {
-            if (!ignore) {
-              setMessages([{
-                id: 'welcome',
-                role: 'assistant',
-                content: 'hi there. i am tomo. i am here to listen and support you. how are you feeling today?',
-              }]);
-            }
-          }
+          // Do not fetch welcome message here; wait for "Start Session" click
         }
       } catch (err) {
         console.error("Failed to fetch history", err);
-        if (!ignore) {
-          setMessages([{
-            id: 'welcome',
-            role: 'assistant',
-            content: 'hi there. i am tomo. i am here to listen and support you. how are you feeling today?',
-          }]);
-        }
       }
     };
 
     fetchHistory();
     return () => { ignore = true; };
   }, []);
+
+  const startSession = async () => {
+    setInSession(true);
+    setLoading(true);
+    try {
+      const memoryEnabled = localStorage.getItem('tomo_long_term_memory') !== 'false';
+      const welcomeRes = await fetch(`/api/chat/welcome?sessionId=${sessionId}&memoryEnabled=${memoryEnabled}`);
+      const welcomeData = await welcomeRes.json();
+      setMessages([{
+        id: 'welcome',
+        role: 'assistant',
+        content: welcomeData.content || 'hi there. i am tomo. i am here to listen and support you. how are you feeling today?',
+      }]);
+    } catch (e) {
+      setMessages([{
+        id: 'welcome',
+        role: 'assistant',
+        content: 'hi there. i am tomo. i am here to listen and support you. how are you feeling today?',
+      }]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -151,6 +155,8 @@ export default function ChatPage() {
           deviceId,
           sessionId,
           isGenZMode,
+          sessionMode,
+          chatLanguage,
           memoryEnabled: localStorage.getItem('tomo_long_term_memory') !== 'false',
           messages: messages.map((m) => ({
             role: m.role,
@@ -233,6 +239,8 @@ export default function ChatPage() {
           deviceId,
           sessionId,
           isGenZMode,
+          sessionMode,
+          chatLanguage,
           memoryEnabled: localStorage.getItem('tomo_long_term_memory') !== 'false',
           messages: [...messages, userMessage].map((m) => ({
             role: m.role,
@@ -292,7 +300,7 @@ export default function ChatPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', fontFamily: 'var(--font-sans)', overflow: 'hidden' }}>
       
-      {/* Custom Modal Overlay */}
+      {/* End Session Modal */}
       {showEndSessionModal && (
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
@@ -348,6 +356,118 @@ export default function ChatPage() {
         </div>
       )}
 
+      {/* Preferences Modal */}
+      {showPreferencesModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
+          backgroundColor: 'rgba(0,0,0,0.4)', 
+          zIndex: 1000, 
+          display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-end',
+          padding: '4.5rem 1.5rem',
+          backdropFilter: 'blur(1px)'
+        }}>
+          <div className="message-enter" style={{
+            backgroundColor: 'var(--bg-surface)',
+            padding: '1.5rem',
+            borderRadius: '12px',
+            width: '320px',
+            boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+            border: '1px solid var(--border-main)',
+            position: 'relative'
+          }}>
+            <button 
+              onClick={() => setShowPreferencesModal(false)}
+              style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+            >
+              <X size={18} />
+            </button>
+            
+            <h3 style={{ margin: '0 0 0.5rem 0', color: 'var(--text-main)', fontSize: '1.1rem', fontWeight: '500' }}>Preferences</h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: '0 0 1.5rem 0' }}>Set how Tomo works for you</p>
+            
+            <div style={{ borderTop: '1px solid var(--border-main)', padding: '1rem 0' }}>
+              <h4 style={{ margin: '0 0 0.75rem 0', color: 'var(--text-main)', fontSize: '0.9rem', fontWeight: '500' }}>Language</h4>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', margin: '0 0 1rem 0' }}>Change Tomo's speaking language</p>
+              
+              <select 
+                value={chatLanguage} 
+                onChange={(e) => setChatLanguage(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem 1rem',
+                  backgroundColor: 'var(--bg-surface)',
+                  color: 'var(--text-main)',
+                  border: '1px solid var(--border-main)',
+                  borderRadius: '8px',
+                  outline: 'none',
+                  fontSize: '0.9rem',
+                  fontFamily: 'var(--font-sans)',
+                  cursor: 'pointer',
+                  appearance: 'none',
+                  backgroundImage: 'url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2381988A%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E")',
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'right 1rem top 50%',
+                  backgroundSize: '0.65rem auto'
+                }}
+              >
+                {['hindi', 'bengali', 'urdu', 'tamil', 'telugu', 'marathi', 'gujarati', 'punjabi', 'english'].map(lang => (
+                  <option key={lang} value={lang}>{lang.charAt(0).toUpperCase() + lang.slice(1)}</option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ borderTop: '1px solid var(--border-main)', paddingTop: '1rem' }}>
+              <h4 style={{ margin: '0 0 0.75rem 0', color: 'var(--text-main)', fontSize: '0.9rem', fontWeight: '500' }}>Session Mode</h4>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', margin: '0 0 1rem 0' }}>Choose your session style</p>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <button
+                  onClick={() => setSessionMode('classic')}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '0.75rem 1rem',
+                    backgroundColor: sessionMode === 'classic' ? 'var(--accent-main)' : 'var(--bg-surface-hover)',
+                    color: sessionMode === 'classic' ? 'var(--text-inverse)' : 'var(--text-main)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    textAlign: 'left'
+                  }}
+                >
+                  <div>
+                    <div style={{ fontWeight: '500', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Classic</div>
+                    <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>Just chat. Tomo listens and responds to what's on your mind.</div>
+                  </div>
+                  {sessionMode === 'classic' && <Check size={16} />}
+                </button>
+                
+                <button
+                  onClick={() => setSessionMode('guided')}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '0.75rem 1rem',
+                    backgroundColor: sessionMode === 'guided' ? 'var(--accent-main)' : 'var(--bg-surface-hover)',
+                    color: sessionMode === 'guided' ? 'var(--text-inverse)' : 'var(--text-main)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    textAlign: 'left'
+                  }}
+                >
+                  <div>
+                    <div style={{ fontWeight: '500', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Guided</div>
+                    <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>Structured support. Tomo gently guides you through a reflection exercise.</div>
+                  </div>
+                  {sessionMode === 'guided' && <Check size={16} />}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Calm, flat header */}
       <header style={{ 
         display: 'flex', 
@@ -362,40 +482,71 @@ export default function ChatPage() {
         </div>
         
         <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <button 
-            onClick={() => setIsGenZMode(!isGenZMode)}
-            style={{
-              padding: '0.5rem 1rem',
-              backgroundColor: isGenZMode ? 'var(--accent-main)' : 'transparent',
-              color: isGenZMode ? 'var(--text-inverse)' : 'var(--text-muted)',
-              border: isGenZMode ? '1px solid var(--accent-main)' : '1px solid var(--border-main)',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontWeight: '500',
-              fontSize: '0.85rem',
-              transition: 'all 0.2s ease',
-            }}
-          >
-            {isGenZMode ? '✨ Gen Z Mode: ON' : 'Gen Z Mode: OFF'}
-          </button>
+          {!inSession && (
+            <>
+              <button 
+                onClick={() => setIsGenZMode(!isGenZMode)}
+                title={isGenZMode ? 'Gen Z Mode: ON' : 'Gen Z Mode: OFF'}
+                style={{
+                  padding: '0.5rem',
+                  backgroundColor: isGenZMode ? 'var(--accent-main)' : 'transparent',
+                  color: isGenZMode ? 'var(--text-inverse)' : 'var(--text-muted)',
+                  border: isGenZMode ? '1px solid var(--accent-main)' : '1px solid var(--border-main)',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseOver={(e) => { if(!isGenZMode) e.currentTarget.style.backgroundColor = 'var(--bg-surface-hover)' }}
+                onMouseOut={(e) => { if(!isGenZMode) e.currentTarget.style.backgroundColor = 'transparent' }}
+              >
+                <Sparkles size={18} />
+              </button>
+              
+              <button 
+                onClick={() => setShowPreferencesModal(true)}
+                title="Preferences"
+                style={{
+                  padding: '0.5rem',
+                  backgroundColor: 'transparent',
+                  color: 'var(--text-muted)',
+                  border: '1px solid var(--border-main)',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseOver={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-surface-hover)' }}
+                onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}
+              >
+                <SlidersHorizontal size={18} />
+              </button>
+            </>
+          )}
           
           <button 
             onClick={() => setShowManualCrisisCard(!showManualCrisisCard)}
+            title="Help / SOS"
             style={{
-              padding: '0.5rem 1rem',
-              backgroundColor: 'transparent',
-              color: 'var(--text-muted)',
-              border: '1px solid var(--border-main)',
+              padding: '0.5rem',
+              backgroundColor: showManualCrisisCard ? 'var(--crisis-bg)' : 'transparent',
+              color: showManualCrisisCard ? 'var(--crisis-text)' : 'var(--text-muted)',
+              border: showManualCrisisCard ? '1px solid var(--crisis-border)' : '1px solid var(--border-main)',
               borderRadius: '6px',
               cursor: 'pointer',
-              fontWeight: '500',
-              fontSize: '0.85rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
               transition: 'all 0.2s ease',
             }}
-            onMouseOver={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-surface-hover)' }}
-            onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}
+            onMouseOver={(e) => { if(!showManualCrisisCard) e.currentTarget.style.backgroundColor = 'var(--bg-surface-hover)' }}
+            onMouseOut={(e) => { if(!showManualCrisisCard) e.currentTarget.style.backgroundColor = 'transparent' }}
           >
-            {showManualCrisisCard ? 'Close Help' : 'Help / SOS'}
+            <LifeBuoy size={18} />
           </button>
         </div>
       </header>
@@ -406,9 +557,39 @@ export default function ChatPage() {
         </div>
       )}
 
-      {/* Main Chat Area */}
-      <main style={{ flex: 1, overflowY: 'auto', padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ flex: 1, minHeight: '2rem' }}></div> {/* Spacer to push content to bottom */}
+      {!inSession ? (
+        <main style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+          <div className="message-enter" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2rem' }}>
+            <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: 'var(--accent-main)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '2.5rem', fontFamily: 'serif', fontStyle: 'italic', boxShadow: '0 8px 32px rgba(129, 152, 138, 0.2)' }}>
+              t
+            </div>
+            <h2 style={{ fontSize: '1.25rem', color: 'var(--text-main)', fontWeight: '400', letterSpacing: '0.5px' }}>your quiet space.</h2>
+            <button
+              onClick={startSession}
+              disabled={loading}
+              style={{
+                marginTop: '1rem',
+                padding: '0.85rem 2.5rem',
+                backgroundColor: 'var(--accent-main)',
+                color: 'var(--text-inverse)',
+                border: 'none',
+                borderRadius: '100px',
+                fontSize: '1rem',
+                fontWeight: '500',
+                cursor: loading ? 'wait' : 'pointer',
+                transition: 'all 0.2s ease',
+                boxShadow: '0 4px 12px rgba(129, 152, 138, 0.15)'
+              }}
+              onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 16px rgba(129, 152, 138, 0.2)'; }}
+              onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(129, 152, 138, 0.15)'; }}
+            >
+              Start Session
+            </button>
+          </div>
+        </main>
+      ) : (
+        <main style={{ flex: 1, overflowY: 'auto', padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ flex: 1, minHeight: '2rem' }}></div> {/* Spacer to push content to bottom */}
         <div style={{ maxWidth: '750px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           {messages.map((msg) => (
             <div 
@@ -502,9 +683,11 @@ export default function ChatPage() {
           <div ref={messagesEndRef} style={{ height: '20px' }} />
         </div>
       </main>
+      )}
 
       {/* Input Area */}
-      <footer style={{ padding: '0 1.5rem 2rem 1.5rem', backgroundColor: 'transparent', zIndex: 10 }}>
+      {inSession && (
+        <footer style={{ padding: '0 1.5rem 2rem 1.5rem', backgroundColor: 'transparent', zIndex: 10 }}>
         <div style={{ maxWidth: '750px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           
           {showDisclaimer && (
@@ -608,8 +791,9 @@ export default function ChatPage() {
               <X size={16} strokeWidth={2} />
             </button>
           </div>
-        </div>
-      </footer>
+          </div>
+        </footer>
+      )}
     </div>
   );
 }

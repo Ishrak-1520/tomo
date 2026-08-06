@@ -39,6 +39,13 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  // Check onboarding status
+  if (user && isProtectedRoute && !user.user_metadata?.onboarded) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/onboarding'
+    return NextResponse.redirect(url)
+  }
+
   return supabaseResponse
 }
 

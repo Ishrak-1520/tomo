@@ -13,7 +13,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { messages, sessionId, isGenZMode, memoryEnabled } = await req.json();
+    const { messages, sessionId, isGenZMode, memoryEnabled, sessionMode, chatLanguage } = await req.json();
     const deviceId = user.id;
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
@@ -74,6 +74,36 @@ export async function POST(req: Request) {
     // 4. Prepare messages for LLM
     let finalPrompt = SYSTEM_PROMPT;
     
+    // ONBOARDING CONTEXT INJECTION
+    const metadata = user.user_metadata;
+    if (metadata && metadata.onboarded) {
+      finalPrompt += `\n\n=== USER CONTEXT (FROM ONBOARDING) ===\n`;
+      if (metadata.name) finalPrompt += `- Name: ${metadata.name}\n`;
+      if (metadata.identity) finalPrompt += `- Pronouns/Identity: ${metadata.identity}\n`;
+      if (metadata.dob) {
+        const age = new Date().getFullYear() - new Date(metadata.dob).getFullYear();
+        finalPrompt += `- Age: ${age}\n`;
+      }
+      if (metadata.motherTongue) finalPrompt += `- Mother Tongue: ${metadata.motherTongue}\n`;
+      if (metadata.mainLanguage) finalPrompt += `- Primary Language: ${metadata.mainLanguage}\n`;
+      if (metadata.relationshipStatus) finalPrompt += `- Relationship Vibe: ${metadata.relationshipStatus}\n`;
+      if (metadata.supportNeeded) finalPrompt += `- What's on their mind: ${metadata.supportNeeded}\n`;
+      if (metadata.reasonForTomo) finalPrompt += `- How you should show up for them: ${metadata.reasonForTomo}\n`;
+      if (metadata.faith) finalPrompt += `- Spiritual Grounding: ${metadata.faith}\n`;
+      
+      finalPrompt += `\nCRITICAL INSTRUCTION: You MUST use the above context to deeply personalize your responses. 
+1. Always refer to them by their name occasionally to build intimacy.
+2. Respect their pronouns/identity. 
+3. Tailor your tone and advice to their age and relationship vibe. 
+4. Keep their main struggles and goals in mind when they ask for advice.
+5. DO NOT explicitly list out these facts like a robot (e.g. do not say "I know you are single and 25"). Let this context subtly flavor your entire personality and advice.`;
+
+      const languageToUse = chatLanguage || metadata.mainLanguage;
+      if (languageToUse) {
+        finalPrompt += `\n\nCRITICAL LANGUAGE INSTRUCTION: The user's primary language is ${languageToUse}. You MUST converse with them entirely in ${languageToUse}. Do not default to English unless their primary language is English.`;
+      }
+    }
+    
     // Check if the conversation recently had a crisis response
     const crisisString = "I want you to know that your life has value, and you don't have to carry this pain alone";
     const hadRecentCrisis = messages.some(m => m.role === 'assistant' && m.content.includes(crisisString));
@@ -107,6 +137,12 @@ export async function POST(req: Request) {
       finalPrompt += "\n\nCRITICAL INSTRUCTION: The user has enabled 'Gen Z Mode'. You must adopt a highly casual, empathetic, and relatable Gen Z persona. Use modern slang naturally (e.g. valid, no cap, fr fr, vibes, bet, lowkey, highkey), keep your formatting very relaxed (mostly lowercase, minimal punctuation), and act like a close internet friend supporting them. Do not sound like a clinical therapist. Sound like a caring friend on Discord.";
     }
 
+    if (sessionMode === 'guided') {
+      finalPrompt += "\n\nCRITICAL SESSION MODE: The user has selected 'GUIDED' mode. Instead of just listening passively, you must take an active, structured approach. Your goal is to guide the user through a gentle reflection exercise. Start by acknowledging their feelings, then ask a single, deep probing question to help them unpack it. Guide them step-by-step. Do not overwhelm them with paragraphs; take it one step at a time.";
+    } else {
+      finalPrompt += "\n\nCRITICAL SESSION MODE: The user has selected 'CLASSIC' mode. You should act as a quiet, empathetic listener. Focus on validating their feelings, offering gentle support, and creating a safe space for them to yap or vent. Keep your responses thoughtful but unstructured.";
+    }
+
     const llmMessages: ChatMessage[] = [
       { role: 'system', content: finalPrompt },
       ...messages
@@ -115,13 +151,13 @@ export async function POST(req: Request) {
     // 5. Generate response from the companion persona
     let responseText = await generateCompletion(llmMessages, 0.7);
 
-    // Programmatically strip out any stubborn em-dashes or en-dashes the LLM tries to use
-    // \u2012-\u2015 covers figure dash, en dash, em dash, and horizontal bar.
-    responseText = responseText.replace(/[\u2012-\u2015]/g, ', ').replace(/--/g, ', ').replace(/ - /g, ', ');
-
     if (!responseText) {
       throw new Error('LLM failed to generate a response');
     }
+
+    // Programmatically strip out any stubborn em-dashes or en-dashes the LLM tries to use
+    // \u2012-\u2015 covers figure dash, en dash, em dash, and horizontal bar.
+    responseText = responseText.replace(/[\u2012-\u2015]/g, ', ').replace(/--/g, ', ').replace(/ - /g, ', ');
 
     // 6. Save Assistant Message to DB
     await supabaseAdmin.from('messages').insert({

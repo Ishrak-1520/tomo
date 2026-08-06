@@ -12,7 +12,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { messages, sessionId, isGenZMode, memoryEnabled } = await req.json();
+    const { messages, sessionId, isGenZMode, memoryEnabled, sessionMode, chatLanguage } = await req.json();
     const deviceId = user.id;
 
     if (!messages || !Array.isArray(messages)) {
@@ -61,8 +61,16 @@ export async function POST(req: Request) {
       }
     }
     
+    if (chatLanguage) {
+      finalPrompt += `\n\nCRITICAL LANGUAGE INSTRUCTION: The user's primary language is ${chatLanguage}. You MUST converse with them entirely in ${chatLanguage}. Do not default to English unless their primary language is English.`;
+    }
+
     if (isGenZMode) {
-      finalPrompt += "\n\nCRITICAL INSTRUCTION: The user has enabled 'Gen Z Mode'. You must adopt a highly casual, empathetic, and relatable Gen Z persona. Use modern slang naturally, keep your formatting very relaxed, and act like a close internet friend supporting them.";
+      finalPrompt += "\n\nCRITICAL INSTRUCTION: The user has enabled 'Gen Z Mode'. You must adopt a highly casual, empathetic, and relatable Gen Z persona. Use modern slang naturally (e.g. valid, no cap, fr fr, vibes, bet, lowkey, highkey), keep your formatting very relaxed (mostly lowercase, minimal punctuation), and act like a close internet friend supporting them. Do not sound like a clinical therapist. Sound like a caring friend on Discord.";
+    }
+
+    if (sessionMode === 'guided') {
+      finalPrompt += "\n\nCRITICAL SESSION MODE: The user is in 'GUIDED' mode. When you proactively check in, gently prompt them to continue the reflection exercise. Guide them to unpack their feelings one step at a time.";
     }
 
     // Crucial proactive instruction
@@ -75,6 +83,11 @@ export async function POST(req: Request) {
 
     // 3. Generate proactive response
     let responseText = await generateCompletion(llmMessages, 0.7);
+
+    if (!responseText) {
+      throw new Error('Failed to generate proactive response');
+    }
+
     // Apply formatting rules
     responseText = responseText.replace(/[\u2012-\u2015]/g, ', ').replace(/--/g, ', ').replace(/ - /g, ', ');
 

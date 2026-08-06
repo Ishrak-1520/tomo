@@ -1,6 +1,6 @@
 import { env } from '@/config/env';
 
-type ChatMessage = {
+export type ChatMessage = {
   role: 'system' | 'user' | 'assistant';
   content: string;
 };

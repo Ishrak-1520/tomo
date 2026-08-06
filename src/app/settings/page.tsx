@@ -42,7 +42,9 @@ const Toggle = ({ checked, onChange, label, description }: { checked: boolean, o
 );
 
 export default function SettingsPage() {
-  const [deviceId, setDeviceId] = useState('loading...');
+  const [userEmail, setUserEmail] = useState('loading...');
+  const [userName, setUserName] = useState('');
+  const [deviceId, setDeviceId] = useState('');
   const [proactiveEmpathy, setProactiveEmpathy] = useState(true);
   const [longTermMemory, setLongTermMemory] = useState(true);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
@@ -85,6 +87,8 @@ export default function SettingsPage() {
         return;
       }
       setDeviceId(id);
+      setUserEmail(session.user.email || 'No email provided');
+      setUserName(session.user.user_metadata?.name || '');
     };
     initAuth();
 
@@ -113,23 +117,45 @@ export default function SettingsPage() {
       <div style={{ maxWidth: '600px', margin: '0 auto' }}>
         
         {/* Profile Section */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{
-            width: '48px',
-            height: '48px',
-            borderRadius: '50%',
-            backgroundColor: 'var(--accent-main)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            fontSize: '1.5rem',
-            fontFamily: 'serif',
-            fontStyle: 'italic'
-          }}>
-            t
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '50%',
+              backgroundColor: 'var(--accent-main)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              fontSize: '1.5rem',
+              fontFamily: 'serif',
+              fontStyle: 'italic'
+            }}>
+              {userName ? userName.charAt(0).toLowerCase() : 't'}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {userName && <span style={{ fontSize: '1.1rem', fontWeight: '600', color: 'var(--text-main)' }}>{userName}</span>}
+              <span style={{ fontSize: userName ? '0.85rem' : '1rem', color: userName ? 'var(--text-muted)' : 'var(--text-main)', fontWeight: userName ? 'normal' : '500' }}>{userEmail}</span>
+            </div>
           </div>
-          <span style={{ fontSize: '1rem', fontWeight: '500' }}>{deviceId}</span>
+          
+          <Link href="/onboarding?edit=true" style={{
+            padding: '0.5rem 1rem',
+            backgroundColor: 'var(--bg-surface)',
+            color: 'var(--text-main)',
+            border: '1px solid var(--border-main)',
+            borderRadius: '6px',
+            fontSize: '0.85rem',
+            fontWeight: '500',
+            textDecoration: 'none',
+            transition: 'all 0.2s ease',
+          }}
+          onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-surface-hover)'}
+          onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-surface)'}
+          >
+            Edit Profile
+          </Link>
         </div>
 
         <Separator />
@@ -155,48 +181,9 @@ export default function SettingsPage() {
 
         <Separator />
 
-        {/* Usage Analytics */}
-        <section>
-          <h2 style={{ fontSize: '1.15rem', fontWeight: '700', margin: '0 0 0.25rem 0' }}>usage analytics</h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>how much you've used tomo</p>
 
-          <div style={{ 
-            border: '1px solid var(--border-main)', 
-            borderRadius: '12px', 
-            padding: '1.5rem',
-            backgroundColor: 'var(--bg-surface)' 
-          }}>
-            <div style={{ display: 'inline-block', padding: '0.25rem 0.75rem', backgroundColor: 'var(--border-subtle)', borderRadius: '6px', fontSize: '0.8rem', fontWeight: '600', marginBottom: '1.5rem' }}>
-              free
-            </div>
-            
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.5rem' }}>
-              <span>text usage</span>
-              <span>28%</span>
-            </div>
-            
-            {/* Progress Bar */}
-            <div style={{ width: '100%', height: '4px', backgroundColor: 'var(--border-main)', borderRadius: '2px', overflow: 'hidden' }}>
-              <div style={{ width: '28%', height: '100%', backgroundColor: '#F59E0B' }} />
-            </div>
-          </div>
-          
-          <button style={{ 
-            marginTop: '1.5rem',
-            padding: '0.5rem 1.25rem', 
-            backgroundColor: '#FBBF24', 
-            color: '#78350F', 
-            border: 'none', 
-            borderRadius: '6px', 
-            fontWeight: '600',
-            fontSize: '0.9rem',
-            cursor: 'pointer'
-          }}>
-            upgrade
-          </button>
-        </section>
 
-        <Separator />
+
 
         {/* Danger Zone */}
         <section>

@@ -20,7 +20,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ content: defaultGreeting });
     }
 
-    let pastSessions = [];
+    let pastSessions: any[] = [];
     if (memoryEnabled) {
       // Fetch past summaries
       const { data } = await supabaseAdmin
@@ -63,7 +63,12 @@ IMPORTANT RULES FOR LONG-TERM MEMORY:
       { role: 'system', content: finalPrompt }
     ];
 
-    let responseText = await generateCompletion(llmMessages, 0.2);
+    let responseText = await generateCompletion(llmMessages, 0.7);
+
+    if (!responseText) {
+      throw new Error('Failed to generate welcome response');
+    }
+
     responseText = responseText.replace(/[\u2012-\u2015]/g, ', ').replace(/--/g, ', ').replace(/ - /g, ', ');
 
     if (!responseText) {
